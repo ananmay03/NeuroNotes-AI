@@ -3,5 +3,7 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/api/register": "pages/api/register.js"
+  "/notes": "pages/notes.js",
+  "/notes/create": "pages/notes/create.js",
+  "/api/notesApi": "pages/api/notesApi.js"
 }

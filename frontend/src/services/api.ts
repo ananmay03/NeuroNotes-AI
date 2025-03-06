@@ -1,35 +1,38 @@
+// src/services/api.ts
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
+// Fetch all notes
+export const fetchNotes = async () => {
+    const response = await axios.get("/api/notesApi"); // Updated path
+    return response.data;
+};
 
-// User Authentication APIs
+// Create a new note
+export const createNote = async (title: string, content: string) => {
+    const response = await axios.post("/api/notesApi", { title, content });
+    return response.data;
+};
+
+// Update an existing note
+export const updateNote = async (id: string, title: string, content: string) => {
+    const response = await axios.put(`/api/notesApi/${id}`, { title, content });
+    return response.data;
+};
+
+// Delete a note
+export const deleteNote = async (id: string) => {
+    const response = await axios.delete(`/api/notesApi/${id}`);
+    return response.data;
+};
+
+
+// Add registerUser and loginUser to the API service
 export const registerUser = async (username: string, password: string) => {
-  const response = await axios.post("/api/register", { username, password });
-  return response.data;
+    const response = await axios.post("/api/register", { username, password });
+    return response.data;
 };
 
 export const loginUser = async (username: string, password: string) => {
-  const response = await axios.post("/api/login", { username, password });
-  return response.data;
-};
-
-// Note Management APIs
-export const fetchNotes = async () => {
-  const response = await axios.get(`${API_URL}/notes`);
-  return response.data.notes;
-};
-
-export const createNote = async (title: string, content: string) => {
-  const response = await axios.post(`${API_URL}/notes`, { title, content });
-  return response.data.note;
-};
-
-export const updateNote = async (id: number, title: string, content: string) => {
-  const response = await axios.put(`${API_URL}/notes/${id}`, { title, content });
-  return response.data.note;
-};
-
-export const deleteNote = async (id: number) => {
-  const response = await axios.delete(`${API_URL}/notes/${id}`);
-  return response.data;
-};
+    const response = await axios.post("/api/login", { username, password });
+    return response.data;
+};  
