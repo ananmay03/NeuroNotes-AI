@@ -13,16 +13,16 @@ export const createNote = async (title: string, content: string) => {
     return response.data;
 };
 
-// Update an existing note
+// Update a specific note by ID
 export const updateNote = async (id: string, title: string, content: string) => {
-    const response = await axios.put(`/api/notesApi/${id}`, { title, content });
-    return response.data;
+  const response = await axios.put(`/api/${id}`, { title, content });
+  return response.data;
 };
 
-// Delete a note
+// Delete a specific note by ID
 export const deleteNote = async (id: string) => {
-    const response = await axios.delete(`/api/notesApi/${id}`);
-    return response.data;
+  const response = await axios.delete(`/api/${id}`);
+  return response.data;
 };
 
 

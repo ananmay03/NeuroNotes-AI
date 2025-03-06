@@ -1,17 +1,20 @@
+// pages/notes/index.tsx
 import { useEffect, useState } from "react";
-import { fetchNotes, deleteNote, updateNote } from "../../src/services/api";
+import { fetchNotes, deleteNote, updateNote, createNote } from "../../src/services/api";
+import { NoteCard } from "../../src/components/NoteCard";
+import { NoteEditor } from "../../src/components/NoteEditor";
 
 interface Note {
     id: string;
     title: string;
     content: string;
+    updatedAt: string;
 }
 
 export default function NotesPage() {
     const [notes, setNotes] = useState<Note[]>([]);
-    const [editMode, setEditMode] = useState<string | null>(null);
-    const [editTitle, setEditTitle] = useState("");
-    const [editContent, setEditContent] = useState("");
+    const [editMode, setEditMode] = useState<Note | null>(null);
+    const [showEditor, setShowEditor] = useState(false);
 
     useEffect(() => {
         const loadNotes = async () => {
@@ -26,123 +29,79 @@ export default function NotesPage() {
         loadNotes();
     }, []);
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (note: Note) => {
+        console.log("Attempting to delete note:", note);
         try {
-            await deleteNote(id);
-            setNotes(notes.filter(note => note.id !== id));
+            await deleteNote(note.id);
+            setNotes(notes.filter(n => n.id !== note.id));
         } catch (error) {
             console.error("Failed to delete note", error);
         }
     };
 
     const handleEdit = (note: Note) => {
-        setEditMode(note.id);
-        setEditTitle(note.title);
-        setEditContent(note.content);
+        setEditMode(note);
+        setShowEditor(true);
     };
 
-    const handleUpdate = async () => {
-        if (!editMode) return;
+    const handleCreate = () => {
+        setEditMode(null);
+        setShowEditor(true);
+    };
 
+    const handleSave = async (data: { title: string; content: string }) => {
+        console.log("Saving note:", data);
         try {
-            await updateNote(editMode, editTitle, editContent);
-            setNotes(notes.map(note => 
-                note.id === editMode ? { ...note, title: editTitle, content: editContent } : note
-            ));
+            if (editMode) {
+                console.log("Updating existing note with ID:", editMode.id);
+                await updateNote(editMode.id, data.title, data.content);
+                setNotes(notes.map(n =>
+                    n.id === editMode.id
+                        ? { ...n, ...data, updatedAt: new Date().toISOString() }
+                        : n
+                ));
+            } else {
+                console.log("Creating a new note");
+                const newNote = await createNote(data.title, data.content);
+                setNotes([...notes, { ...newNote, updatedAt: new Date().toISOString() }]);
+            }
+            setShowEditor(false);
             setEditMode(null);
-            setEditTitle("");
-            setEditContent("");
         } catch (error) {
-            console.error("Failed to update note", error);
+            console.error("Failed to save note", error);
         }
     };
 
     return (
-        <div>
-            <h2>Notes</h2>
-            <ul style={{ listStyle: "none", padding: 0 }}>
+        <div className="p-8">
+            <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-bold">Notes</h2>
+                <button
+                    onClick={handleCreate}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                >
+                    Create New Note
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {notes.map((note) => (
-                    <li key={note.id} style={{ marginBottom: "20px" }}>
-                        {editMode === note.id ? (
-                            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                                <input
-                                    type="text"
-                                    value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
-                                    style={{ flex: "1", padding: "5px" }}
-                                />
-                                <textarea
-                                    value={editContent}
-                                    onChange={(e) => setEditContent(e.target.value)}
-                                    style={{ flex: "2", padding: "5px", minHeight: "60px" }}
-                                />
-                                <button
-                                    onClick={handleUpdate}
-                                    style={{
-                                        backgroundColor: "blue",
-                                        color: "white",
-                                        border: "none",
-                                        padding: "5px 10px",
-                                        cursor: "pointer",
-                                        borderRadius: "5px"
-                                    }}
-                                >
-                                    Update
-                                </button>
-                                <button
-                                    onClick={() => setEditMode(null)}
-                                    style={{
-                                        backgroundColor: "gray",
-                                        color: "white",
-                                        border: "none",
-                                        padding: "5px 10px",
-                                        cursor: "pointer",
-                                        borderRadius: "5px"
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        ) : (
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <div>
-                                    <h3 style={{ margin: "5px 0" }}>{note.title}</h3>
-                                    <p style={{ margin: "5px 0" }}>{note.content}</p>
-                                </div>
-                                <div>
-                                    <button
-                                        onClick={() => handleEdit(note)}
-                                        style={{
-                                            backgroundColor: "blue",
-                                            color: "white",
-                                            border: "none",
-                                            padding: "5px 10px",
-                                            marginRight: "5px",
-                                            cursor: "pointer",
-                                            borderRadius: "5px"
-                                        }}
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(note.id)}
-                                        style={{
-                                            backgroundColor: "red",
-                                            color: "white",
-                                            border: "none",
-                                            padding: "5px 10px",
-                                            cursor: "pointer",
-                                            borderRadius: "5px"
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </li>
+                    <NoteCard
+                        key={note.id}
+                        note={note}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                    />
                 ))}
-            </ul>
+            </div>
+
+            {showEditor && (
+                <NoteEditor
+                    note={editMode}
+                    onSave={handleSave}
+                    onCancel={() => setShowEditor(false)}
+                />
+            )}
         </div>
     );
 }
