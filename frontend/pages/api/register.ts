@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { addUser, isUserExists } from "../../src/services/userStore";
+import { ApiError, handleApiError } from "../../src/utils/apiError";
 
 console.log("Register API Loaded");
 
@@ -7,10 +8,12 @@ const MIN_PASSWORD_LENGTH = 6;
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    console.log("API endpoint hit with method:", req.method);
+    try {
+        console.log("API endpoint hit with method:", req.method);
 
-    if (req.method === "POST") {
-        console.log("POST request detected");
+        if (req.method !== "POST") {
+            throw new ApiError(`Method ${req.method} not allowed`, 405);
+        }
 
         const { username, password } = req.body;
 
@@ -18,31 +21,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log("Parsed password:", password);
 
         if (!username || !password) {
-            console.log("Username or password is missing");
-            return res.status(400).json({ message: "Username and password are required" });
+            throw new ApiError("Username and password are required", 400);
         }
 
         if (!USERNAME_REGEX.test(username)) {
-            console.log("Invalid username format");
-            return res.status(400).json({ message: "Username must be 3-20 characters long and contain only letters, numbers, and underscores" });
+            throw new ApiError("Username must be 3-20 characters long and contain only letters, numbers, and underscores", 400);
         }
 
         if (password.length < MIN_PASSWORD_LENGTH) {
-            console.log("Password is too short");
-            return res.status(400).json({ message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long` });
+            throw new ApiError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long`, 400);
         }
 
         if (isUserExists(username)) {
-            console.log("User already exists:", username);
-            return res.status(400).json({ message: "User already exists" });
+            throw new ApiError("User already exists", 409);
         }
 
         await addUser(username, password);
         console.log("User registered successfully:", username);
         res.status(200).json({ message: "User registered successfully" });
-    } else {
-        console.log("Method not allowed:", req.method);
-        res.setHeader("Allow", ["POST"]);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+
+    } catch (error) {
+        handleApiError(res, error);
     }
 }
