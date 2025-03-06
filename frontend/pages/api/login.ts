@@ -3,18 +3,14 @@ import { findUser } from "../../src/services/userStore";
 
 console.log("Login API Loaded");
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     console.log("API endpoint hit with method:", req.method);
 
     if (req.method === "POST") {
         console.log("POST request detected");
 
-        // Log the raw request body
-        console.log("Request Body (raw):", req.body);
-
         const { username, password } = req.body;
 
-        // Log parsed data
         console.log("Parsed username:", username);
         console.log("Parsed password:", password);
 
@@ -23,9 +19,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
             return res.status(400).json({ message: "Username and password are required" });
         }
 
-        // Check current users array before searching
-        const user = findUser(username, password);
-        console.log("Searching for user:", { username, password });
+        const user = await findUser(username, password);
 
         if (user) {
             console.log("Login successful for user:", username);

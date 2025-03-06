@@ -1,27 +1,37 @@
+import bcrypt from "bcrypt";
+
 type User = {
     username: string;
-    password: string;
+    passwordHash: string; // Store hashed passwords instead of plain text
 };
 
 // Check if the global "users" array exists, otherwise initialize it
-const globalAny: any = global; // TypeScript workaround
+const globalAny: any = global;
 globalAny.users = globalAny.users || [];
-
-// Use the global "users" array for storage
 const users: User[] = globalAny.users;
 
-// Add a new user to the store
-export const addUser = (username: string, password: string) => {
-    users.push({ username, password });
-    console.log("User added:", { username, password });
+const SALT_ROUNDS = 10;
+
+// Add a new user to the store with a hashed password
+export const addUser = async (username: string, password: string) => {
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    users.push({ username, passwordHash });
+    console.log("User added:", { username, passwordHash });
     console.log("Current users array after registration:", users);
 };
 
-// Find a user by username and password
-export const findUser = (username: string, password: string) => {
-    console.log("Searching for user:", { username, password });
+// Find a user by username and validate the password
+export const findUser = async (username: string, password: string) => {
+    console.log("Searching for user:", { username });
     console.log("Current users array during login:", users);
-    return users.find(user => user.username === username && user.password === password);
+
+    const user = users.find(user => user.username === username);
+    if (user && await bcrypt.compare(password, user.passwordHash)) {
+        console.log("Password match found for user:", username);
+        return user;
+    }
+    console.log("No matching user or password mismatch");
+    return null;
 };
 
 // Check if a user exists by username
